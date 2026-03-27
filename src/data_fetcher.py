@@ -34,7 +34,7 @@ class DataFetcher:
             "SENTINEL1_GRD",
             spatial_extent = ArOfIn,
             temporal_extent = time_period,
-            bands = ["HH", "HV"]
+            bands = ["VV", "VH"]
         )
 
         # Add elevation model

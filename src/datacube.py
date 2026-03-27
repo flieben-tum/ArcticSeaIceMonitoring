@@ -58,7 +58,7 @@ class ArcticDataCube:
             ds = ds.rio.write_nodata(-9999)
 
             if ds.rio.count == 2:
-                ds.coords['band'] = ['HH', 'HV']
+                ds.coords['band'] = ['VV', 'VH']
 
             sar_list.append(ds)
             timestamps.append(dt)
@@ -158,7 +158,7 @@ class ArcticDataCube:
             bm_ds = bm_ds.rio.write_crs("EPSG:3413")
 
         # reproject
-        bm_reproject = bm_ds.rio.reproject_match(dataset["SAR"], resampling = 0, nodata = 127)
+        bm_reproject = bm_ds.rio.reproject_match(dataset["SAR"], resampling = 0)
 
         # cleanup the dimensions
         mask_layer = bm_reproject.squeeze(drop=True)
@@ -167,14 +167,14 @@ class ArcticDataCube:
         mask_layer.name = "land_class"
 
         # check mask values
-        """unique_vals = list(mask_layer.values.flatten())
-        print(f"Values in reprojected mask: {unique_vals[:10]}")"""
+        unique_vals = np.unique(mask_layer.values)
 
         # add to dataset
         dataset["land_mask"] = mask_layer
 
         # filter (keep only ocean pixels)
         ds_masked = dataset.where(dataset["land_mask"] == 0)
+        print(f"found unique values in land mask: {unique_vals}.")
 
         return ds_masked
 
@@ -191,11 +191,11 @@ class ArcticDataCube:
         target_coords = pd.Index(daily_time, name = "time")
 
         # match coordinates
-        thermal_cube = thermal_cube.assign_coords(x = sar_cube.x, y = sar_cube.y)
+        thermal_cube = thermal_cube.rio.reproject_match(sar_cube)
 
         # filter for >0 values
-        sar_cube = sar_cube.where(sar_cube > 0)
-        thermal_cube = thermal_cube.where(thermal_cube > 0)
+        # sar_cube = sar_cube.where(sar_cube > 0)
+        # thermal_cube = thermal_cube.where(thermal_cube > 0)
 
         # interpolate SAR and Thermal filled
         sar_aligned = self._align_to_grid(sar_cube, target_coords)
@@ -219,7 +219,7 @@ class ArcticDataCube:
         ds_fused.attrs["description"] = "Fused Arctic Data Cube with SAR and Thermal data"
 
         # apply land mask
-        ds_fused = self.apply_land_mask(ds_fused)
+        # ds_fused = self.apply_land_mask(ds_fused)
 
         return ds_fused
     

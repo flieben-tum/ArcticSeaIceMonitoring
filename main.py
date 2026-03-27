@@ -14,16 +14,19 @@ from src.datacube import ArcticDataCube
 from src.data_fetcher_validation import ValidationDataFetcher
 
 def main():
+    # config
+    output_dir = "data/NetCDF/"
+
     print("=== Starting Arctic Data Cube Pipeline ===")
 
     # setup dates
     t_start = pd.to_datetime(TIME_PERIOD[0])
     t_end = pd.to_datetime(TIME_PERIOD[1])
-    
+    """
     # start data fetching data in a loop for every month in the time period
     fetcher = DataFetcher()
     months = pd.date_range(start = t_start.replace(day=1), end = t_end, freq='MS')
-
+    
     for current_month in months:
         # create YYYY-MM-DD strings for each month
         month_start = current_month.strftime("%Y-%m-%d")
@@ -67,7 +70,6 @@ def main():
 
         # output filing
         output_filename = f"arctic_datacube_{year}.nc"
-        output_dir = "data/NetCDF/"
         os.makedirs(output_dir, exist_ok=True)
         full_path = os.path.join(output_dir, output_filename)
         print(f"Output path for year {year}: {full_path}")
@@ -130,6 +132,10 @@ def main():
     print("\n" + "="*50)
     print("=== ALL YEARS PROCESSED SUCCESSFULLY ===")
     print("="*50 + "\n")
+    """
+
+    start_year = t_start.year
+    end_year = t_end.year
 
     # merge yearly files into one cube for the whole period
     print("Merging yearly files into one cube for the whole period...")
@@ -139,7 +145,7 @@ def main():
     master_path = os.path.join(output_dir, "arctic_datacube_full_period.nc")
 
     if len(valid_files) > 1:
-        master_cube = xr.open_mfdataset(valid_files, combine = 'nested', concat_dim = "time")
+        master_cube = xr.open_mfdataset(valid_files, combine = 'nested', concat_dim = "time", chunks = {"time": 10})
         print(f"Master cube created for full period. Dimensions: {master_cube.dims}, Variables: {list(master_cube.data_vars)}. Writing to {master_path}...")
         master_cube.to_netcdf(master_path)
         print(f"Master cube saved to {master_path}")
